@@ -1,0 +1,10 @@
+name: Feature request
+description: An idea for Hex Earth
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you want?
+    validations:
+      required: true

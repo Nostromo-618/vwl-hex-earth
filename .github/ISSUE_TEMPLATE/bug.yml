@@ -1,0 +1,11 @@
+name: Bug report
+description: Something is broken
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Steps, expected vs actual, browser/OS, and tier (28.8k / 64.8k / …).
+    validations:
+      required: true

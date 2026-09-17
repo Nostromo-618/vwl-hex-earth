@@ -1,0 +1,14 @@
+node_modules
+dist
+*.tsbuildinfo
+.playwright-mcp
+*.local
+.DS_Store
+.env
+.env.*
+.kilo
+coverage
+test-results
+playwright-report
+blob-report
+playwright/.cache

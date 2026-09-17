@@ -1,0 +1,10 @@
+dist
+coverage
+node_modules
+pnpm-lock.yaml
+playwright-report
+test-results
+blob-report
+src/assets
+.kilo
+.playwright-mcp

@@ -36,7 +36,7 @@ that package's `prepack` build (allowlisted in `pnpm-workspace.yaml`).
 ## Run
 
 ```sh
-pnpm install
+pnpm install --ignore-scripts=false
 pnpm exec playwright install chromium   # once, for e2e
 pnpm dev
 ```
@@ -53,7 +53,7 @@ pnpm dev
 | `pnpm test`          | Vitest                                                    |
 | `pnpm test:coverage` | Vitest + v8 coverage thresholds                           |
 | `pnpm test:e2e`      | Playwright (Chromium; expects a build, or builds locally) |
-| `pnpm ci`            | Full gate used by GitHub Actions                          |
+| `pnpm run ci`        | Full gate used by GitHub Actions                          |
 
 Comparative benchmarks run only when requested from the Stats panel.
 

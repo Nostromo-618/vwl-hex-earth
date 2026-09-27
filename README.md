@@ -1,11 +1,11 @@
-# Hex Earth
+# Vanduo Hex Earth
 
 A hex-grid rendering of the whole Earth built with Vue 3, [`@vanduo-oss/vd3`](https://github.com/vanduo-oss/vd3) (UI + dark mode), and [`@vanduo-oss/vdl-cbun`](https://github.com/vanduo-oss/vdl-cbun) (canvas hex grid, installed from a pinned GitHub commit).
 
 - Resolution tiers: 28.8k / 64.8k / 115.2k / 259.2k hexes. World keeps the classic
   2:1 globe grids (240×120 … 720×360). Europe uses an equal-area (EPSG:3035-style
   LAEA) lattice sized to the same hex counts so the continent is not stretched.
-  Europe opens at 259.2k; every tier is available immediately.
+  Desktop Europe opens at 259.2k; phones start at the lowest tier. Every tier remains selectable.
 - Land: vendored Natural Earth 110m (world) and clipped 10m land + lakes (Europe),
   rasterized per hex through a latitude-band polygon index, with boundary-cell
   supersampling to keep coastlines readable at high tiers
@@ -18,6 +18,8 @@ A hex-grid rendering of the whole Earth built with Vue 3, [`@vanduo-oss/vd3`](ht
   parity-correct hex neighborhood
 - Stats panel: FPS, render mode/timing, hex counts, terrain breakdown, memory,
   view, and per-tier benchmark results
+
+[Open the live Hex Earth demo](https://labs.vanduo.dev/#demos/hex-earth) · [Vanduo Labs](https://labs.vanduo.dev/)
 
 ## Requirements
 
@@ -42,7 +44,7 @@ pnpm dev
 | Script               | Purpose                                                   |
 | -------------------- | --------------------------------------------------------- |
 | `pnpm dev`           | Vite dev server                                           |
-| `pnpm build`         | Typecheck + production bundle                             |
+| `pnpm build`         | Typecheck + standalone and library bundles                |
 | `pnpm preview`       | Serve `dist/`                                             |
 | `pnpm typecheck`     | `vue-tsc` on app and node configs                         |
 | `pnpm lint`          | ESLint                                                    |
@@ -53,7 +55,7 @@ pnpm dev
 | `pnpm test:e2e`      | Playwright (Chromium; expects a build, or builds locally) |
 | `pnpm ci`            | Full gate used by GitHub Actions                          |
 
-Pass `?nobench=1` to skip background ultra-tier benchmarks (CI e2e does this).
+Comparative benchmarks run only when requested from the Stats panel.
 
 ## Credits
 
@@ -70,9 +72,9 @@ Pass `?nobench=1` to skip background ultra-tier benchmarks (CI e2e does this).
 
 [MIT](LICENSE) © Nostromo-618
 
-## Private Labs integration
+## Labs integration
 
-Build the standalone application and reusable library with `pnpm build`. Labs consumes `VdlHexEarthDemo` from `@vanduo-oss/vdl-hex-earth` through a sibling link, plus `@vanduo-oss/vdl-hex-earth/style.css`. Pass `embedded` to fill the host stage. The host and demo share Vue 3.5.42 and vd3 1.7.4; Vite dedupes those dependencies. The library emits its geography as separate lazy assets with module-relative URLs.
+The repository is public; the package remains unpublished on npm (`private: true`). Build the standalone application and reusable library with `pnpm build`. Labs consumes `VdlHexEarthDemo` from `@vanduo-oss/vdl-hex-earth` through a sibling link, plus `@vanduo-oss/vdl-hex-earth/style.css`. Pass `embedded` to fill the host stage. The host and demo share Vue 3.5.42 and vd3 1.7.4; Vite dedupes those dependencies. The library emits its geography as separate lazy assets with module-relative URLs.
 
 Controls and Stats use scoped `vdl-hex-earth:<panel>:position` preferences, pointer handles, arrow-key positioning (Shift for larger moves), collapse/close and Reset layout. Positions clamp to the stage after viewport/dock changes. Phone sheets keep map gestures available and begin at the low tier; desktop keeps the existing Europe/ultra default. World/Europe, all tiers, terrain and path mode remain available. Comparative benchmarks are on demand and canceled on exit/region changes. Canvases, samplers, observers, listeners and animation frames are disposed on unmount.
 

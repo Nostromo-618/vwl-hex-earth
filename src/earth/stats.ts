@@ -4,11 +4,13 @@ import { KIND_NAMES } from './terrain';
 
 /** World-side counters the canvas core does not know about. */
 export interface HexWorldInfo {
+  region: string;
   tier: string;
   cols: number;
   rows: number;
   hexes: number;
   cell: number;
+  cellUnit: 'deg' | 'km';
   landCells: number;
   kindCounts: number[];
   paintMs: number;

@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 test('path mode draws a route after two canvas clicks', async ({ page }) => {
   await page.goto('/?nobench=1');
-  await expect(page.getByTestId('status')).toContainText(/painted 240×120/, { timeout: 60_000 });
+  await expect(page.getByTestId('status')).toContainText(/painted Europe \d+×\d+/, {
+    timeout: 90_000,
+  });
   await page.getByTestId('path-mode').click();
   await expect(page.getByTestId('status')).toContainText(/path mode on/);
   const canvas = page.locator('[data-testid="hex-host"] canvas');

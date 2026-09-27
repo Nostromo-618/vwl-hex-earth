@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { landTestFromTopology, type LandTopology } from '../../src/earth/geoLand';
+import {
+  landTestFromPolygons,
+  landTestFromTopology,
+  type LandPolygons,
+  type LandTopology,
+} from '../../src/earth/geoLand';
 
 function squareArc(x0: number, y0: number, size: number): number[][] {
   return [
@@ -73,6 +78,27 @@ describe('landTestFromTopology', () => {
     });
     expect(at(0, 0)).toBe(false);
     expect(at(12, 0)).toBe(true);
+  });
+
+  it('decodes a root Polygon or MultiPolygon land object', () => {
+    const poly = landTestFromTopology({
+      transform: { scale: [1, 1], translate: [0, 0] },
+      arcs: [squareArc(-5, -5, 10)],
+      objects: { land: { type: 'Polygon', arcs: [[0]] } },
+    });
+    expect(poly(0, 0)).toBe(true);
+    const multi = landTestFromTopology({
+      transform: { scale: [1, 1], translate: [0, 0] },
+      arcs: [squareArc(-5, -5, 10)],
+      objects: { land: { type: 'MultiPolygon', arcs: [[[0]]] } },
+    });
+    expect(multi(0, 0)).toBe(true);
+    const empty = landTestFromTopology({
+      transform: { scale: [1, 1], translate: [0, 0] },
+      arcs: [],
+      objects: { land: { type: '' } },
+    });
+    expect(empty(0, 0)).toBe(false);
   });
 
   it('rejects points in a band that miss the polygon bbox', () => {
@@ -151,6 +177,26 @@ describe('Natural Earth 110m', () => {
   });
 });
 
+describe('Natural Earth 10m Europe', () => {
+  const land = JSON.parse(
+    readFileSync(join(process.cwd(), 'src/assets/land-10m-europe.json'), 'utf8'),
+  ) as LandPolygons;
+  const lakes = JSON.parse(
+    readFileSync(join(process.cwd(), 'src/assets/lakes-10m-europe.json'), 'utf8'),
+  ) as LandPolygons;
+  const landAt = landTestFromPolygons(land);
+  const lakeAt = landTestFromPolygons(lakes);
+  const at = (lon: number, lat: number): boolean => landAt(lon, lat) && !lakeAt(lon, lat);
+
+  it('keeps London and Paris as land, Kansas outside the clip, and Vänern as water', () => {
+    expect(at(-0.13, 51.51)).toBe(true);
+    expect(at(2.35, 48.86)).toBe(true);
+    expect(at(-98.3, 39.1)).toBe(false);
+    expect(lakeAt(13.3, 58.85)).toBe(true);
+    expect(at(13.3, 58.85)).toBe(false);
+  });
+});
+
 describe('createGeoLandTest', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -169,5 +215,40 @@ describe('createGeoLandTest', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(first).toBe(second);
     expect(first(12, 0)).toBe(true);
+  });
+
+  it('loads Europe land and lakes once and reuses the tester', async () => {
+    vi.resetModules();
+    const box = (size: number) => ({
+      rings: [
+        [
+          [-size, -size],
+          [size, -size],
+          [size, size],
+          [-size, size],
+          [-size, -size],
+        ],
+      ],
+      minX: -size,
+      minY: -size,
+      maxX: size,
+      maxY: size,
+    });
+    const fetchMock = vi.fn(async (url: string) => ({
+      json: async () => {
+        if (String(url).includes('lakes')) return { polygons: [box(1)] };
+        if (String(url).includes('10m')) return { polygons: [box(10)] };
+        return tinyLand;
+      },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { createGeoLandTest: fresh } = await import('../../src/earth/geoLand');
+    const { EUROPE } = await import('../../src/earth/regions');
+    const first = await fresh(EUROPE);
+    const second = await fresh(EUROPE);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(first).toBe(second);
+    expect(first(5, 0)).toBe(true);
+    expect(first(0, 0)).toBe(false);
   });
 });

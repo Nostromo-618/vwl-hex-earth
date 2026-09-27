@@ -12,6 +12,7 @@ export default tseslint.config(
       'playwright-report/**',
       'blob-report/**',
       'node_modules/**',
+      '.kilo/**',
     ],
   },
   js.configs.recommended,
@@ -31,6 +32,7 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,vue}'],
     languageOptions: {
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
       globals: {
         window: 'readonly',
         document: 'readonly',
@@ -46,6 +48,7 @@ export default tseslint.config(
         HTMLCanvasElement: 'readonly',
         CanvasRenderingContext2D: 'readonly',
         PointerEvent: 'readonly',
+        KeyboardEvent: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
       },
@@ -58,6 +61,15 @@ export default tseslint.config(
       'vue/html-indent': 'off',
       'vue/html-self-closing': 'off',
       'vue/html-closing-bracket-newline': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        fetch: 'readonly',
+        console: 'readonly',
+      },
     },
   },
   {

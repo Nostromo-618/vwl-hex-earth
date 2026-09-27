@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed } from 'vue';
+import FloatingPanel from './FloatingPanel.vue';
 import { HEX_SIZE, TIERS } from '../earth/world';
 import {
   estimateModelBytes,
@@ -10,72 +11,8 @@ import {
   type TierBenchmark,
 } from '../earth/stats';
 
-defineProps<{ open: boolean }>();
+defineProps<{ open: boolean; resetKey?: number }>();
 defineEmits<{ (e: 'close'): void }>();
-
-const STORAGE_KEY = 'hex-earth-stats-position';
-
-const panel = ref<HTMLElement | null>(null);
-const pos = ref(loadPosition());
-
-let drag: { dx: number; dy: number } | null = null;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), Math.max(min, max));
-}
-
-function loadPosition(): { x: number; y: number } {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as { x: number; y: number };
-      if (Number.isFinite(parsed.x) && Number.isFinite(parsed.y)) return parsed;
-    }
-  } catch {
-    /* ignore malformed persisted state */
-  }
-  return { x: 16, y: 96 };
-}
-
-function constrain(): void {
-  const el = panel.value;
-  if (!el) return;
-  const w = el.offsetWidth || 300;
-  const h = el.offsetHeight || 360;
-  pos.value = {
-    x: clamp(pos.value.x, 4, window.innerWidth - w - 4),
-    y: clamp(pos.value.y, 4, window.innerHeight - h - 4),
-  };
-}
-
-function startDrag(event: PointerEvent): void {
-  if ((event.target as HTMLElement).closest('.stats-close')) return;
-  drag = { dx: event.clientX - pos.value.x, dy: event.clientY - pos.value.y };
-  window.addEventListener('pointermove', onDrag);
-  window.addEventListener('pointerup', endDrag);
-}
-
-function onDrag(event: PointerEvent): void {
-  if (!drag) return;
-  const el = panel.value;
-  const w = el?.offsetWidth || 300;
-  const h = el?.offsetHeight || 360;
-  pos.value = {
-    x: clamp(event.clientX - drag.dx, 4, window.innerWidth - w - 4),
-    y: clamp(event.clientY - drag.dy, 4, window.innerHeight - h - 4),
-  };
-}
-
-function endDrag(): void {
-  drag = null;
-  window.removeEventListener('pointermove', onDrag);
-  window.removeEventListener('pointerup', endDrag);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pos.value));
-  } catch {
-    /* storage unavailable — drag still works for this session */
-  }
-}
 
 const gate = computed(() => ultraGate());
 
@@ -97,39 +34,18 @@ function percentile(part: number, total: number): string {
 function benchOf(tier: string): TierBenchmark | undefined {
   return statsStore.benchmarks[tier];
 }
-
-onMounted(() => {
-  constrain();
-  window.addEventListener('resize', constrain);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', constrain);
-  endDrag();
-});
 </script>
 
 <template>
-  <aside
-    v-if="open"
-    ref="panel"
-    class="stats-panel"
-    data-testid="stats-panel"
-    :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
+  <FloatingPanel
+    :open="open"
+    name="stats"
+    title="Stats"
+    :initial-x="350"
+    :initial-y="48"
+    :reset-key="resetKey"
+    @close="$emit('close')"
   >
-    <header class="stats-head" data-testid="stats-head" @pointerdown="startDrag">
-      <span class="stats-title">STATS</span>
-      <button
-        class="stats-close"
-        type="button"
-        aria-label="Close stats"
-        data-testid="stats-close"
-        @click="$emit('close')"
-      >
-        ×
-      </button>
-    </header>
-
     <div class="stats-body">
       <section>
         <h4>Performance</h4>
@@ -150,6 +66,9 @@ onBeforeUnmount(() => {
       <section>
         <h4>Grid</h4>
         <div class="row">
+          <span>Region</span><b>{{ statsStore.world?.region ?? '—' }}</b>
+        </div>
+        <div class="row">
           <span>Tier</span><b>{{ statsStore.world?.tier ?? '—' }}</b>
         </div>
         <div class="row">
@@ -159,7 +78,14 @@ onBeforeUnmount(() => {
           }}</b>
         </div>
         <div class="row">
-          <span>Cell</span><b>{{ statsStore.world ? `${statsStore.world.cell}°` : '—' }}</b>
+          <span>Cell</span
+          ><b>{{
+            statsStore.world
+              ? statsStore.world.cellUnit === 'km'
+                ? `${statsStore.world.cell.toFixed(1)} km`
+                : `${statsStore.world.cell}°`
+              : '—'
+          }}</b>
         </div>
         <div class="row">
           <span>Total hexes</span><b>{{ statsStore.world?.hexes.toLocaleString() ?? '—' }}</b>
@@ -233,10 +159,7 @@ onBeforeUnmount(() => {
         <h4>Benchmarks</h4>
         <div v-if="statsStore.benchmarkRunning" class="row"><span>measuring…</span><b></b></div>
         <div v-for="tier in TIERS" :key="tier.id" class="bench">
-          <div class="bench-name">
-            {{ tier.id }} ({{ tier.label }})
-            <span v-if="tier.experimental" class="bench-gate">gate</span>
-          </div>
+          <div class="bench-name">{{ tier.id }} ({{ tier.label }})</div>
           <div class="row">
             <span>first paint</span><b>{{ fmt(benchOf(tier.id)?.firstPaintMs ?? null, 0) }} ms</b>
           </div>
@@ -255,56 +178,10 @@ onBeforeUnmount(() => {
         </div>
       </section>
     </div>
-  </aside>
+  </FloatingPanel>
 </template>
 
 <style scoped>
-.stats-panel {
-  position: fixed;
-  z-index: 50;
-  width: 310px;
-  max-height: 78vh;
-  overflow: auto;
-  background: var(--vd-bg-primary);
-  color: var(--vd-text-primary);
-  border: 1px solid var(--vd-border-color);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  font-size: 12px;
-  user-select: none;
-}
-
-.stats-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  cursor: grab;
-  border-bottom: 1px solid var(--vd-border-color);
-  position: sticky;
-  top: 0;
-  background: var(--vd-bg-secondary);
-}
-
-.stats-head:active {
-  cursor: grabbing;
-}
-
-.stats-title {
-  font-weight: 700;
-  letter-spacing: 0.14em;
-}
-
-.stats-close {
-  border: none;
-  background: transparent;
-  color: var(--vd-text-muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 4px;
-}
-
 .stats-body {
   padding: 6px 10px 10px;
 }
@@ -357,15 +234,6 @@ h4 {
 .bench-name {
   font-weight: 600;
   margin-bottom: 2px;
-}
-
-.bench-gate {
-  font-size: 10px;
-  color: #f59e0b;
-  border: 1px solid #f59e0b;
-  border-radius: 999px;
-  padding: 0 5px;
-  margin-left: 4px;
 }
 
 .gate-row {

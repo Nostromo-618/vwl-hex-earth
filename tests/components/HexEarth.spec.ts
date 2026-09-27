@@ -1,6 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { lastGrid } from '../helpers/mock-hex-grid';
+import { EUROPE } from '../../src/earth/regions';
+import { gridFor, tierById } from '../../src/earth/world';
 
 const land = vi.hoisted(() => {
   const queue: Array<(value: (lon: number, lat: number) => boolean) => void> = [];
@@ -63,19 +65,22 @@ describe('HexEarth', () => {
 
   it('paints the default tier and reports status', async () => {
     const wrapper = mount(HexEarth, {
-      props: { tier: 'low', pathMode: false },
+      props: { tier: 'low', pathMode: false, region: 'europe' },
       attachTo: document.body,
     });
     await paintFlush();
     const status = wrapper.emitted('status')?.flat() ?? [];
-    expect(status.some((s) => String(s).includes('painted 240×120'))).toBe(true);
+    const spec = gridFor(EUROPE, tierById('low'));
+    expect(status.some((s) => String(s).includes(`painted Europe ${spec.cols}×${spec.rows}`))).toBe(
+      true,
+    );
     expect(wrapper.get('[data-testid="hex-host"]').exists()).toBe(true);
     wrapper.unmount();
   });
 
   it('selects a hex for coordinates, then draws a path in path mode', async () => {
     const wrapper = mount(HexEarth, {
-      props: { tier: 'low', pathMode: false },
+      props: { tier: 'low', pathMode: false, region: 'europe' },
       attachTo: document.body,
     });
     await paintFlush();
@@ -133,7 +138,7 @@ describe('HexEarth', () => {
   it('cancels an in-flight paint when the tier changes', async () => {
     land.delay = true;
     const wrapper = mount(HexEarth, {
-      props: { tier: 'low', pathMode: false },
+      props: { tier: 'low', pathMode: false, region: 'europe' },
       attachTo: document.body,
     });
     await new Promise((resolve) => {
@@ -145,13 +150,28 @@ describe('HexEarth', () => {
     land.flush();
     await flushPromises();
     const status = wrapper.emitted('status')?.flat().map(String) ?? [];
-    expect(status.filter((s) => s.startsWith('painted')).at(-1)).toContain('360×180');
+    expect(status.filter((s) => s.startsWith('painted')).at(-1)).toContain(
+      `${gridFor(EUROPE, tierById('mid')).cols}×${gridFor(EUROPE, tierById('mid')).rows}`,
+    );
+    wrapper.unmount();
+  });
+
+  it('repaints when the region changes', async () => {
+    const wrapper = mount(HexEarth, {
+      props: { tier: 'low', pathMode: false, region: 'europe' },
+      attachTo: document.body,
+    });
+    await paintFlush();
+    await wrapper.setProps({ region: 'world' });
+    await flushPromises();
+    const status = wrapper.emitted('status')?.flat().map(String) ?? [];
+    expect(status.filter((s) => s.startsWith('painted')).at(-1)).toContain('World 240×120');
     wrapper.unmount();
   });
 
   it('runs offscreen benchmarks and exposes zoom helpers', async () => {
     const wrapper = mount(HexEarth, {
-      props: { tier: 'low', pathMode: false },
+      props: { tier: 'low', pathMode: false, region: 'europe' },
       attachTo: document.body,
     });
     await paintFlush();
@@ -160,7 +180,7 @@ describe('HexEarth', () => {
       zoomOut: () => void;
       resetView: () => void;
       runBenchmarks: () => Promise<void>;
-      getStats: () => { world: { tier: string } | null };
+      getStats: () => { world: { tier: string; region: string } | null };
       getVisibleCount: () => number;
     };
     const scale0 = lastGrid.current?.transform.scale ?? 1;
@@ -171,6 +191,7 @@ describe('HexEarth', () => {
     await vm.runBenchmarks();
     expect(vm.getVisibleCount()).toBeGreaterThan(0);
     expect(vm.getStats().world?.tier).toBe('low');
+    expect(vm.getStats().world?.region).toBe('Europe');
     wrapper.unmount();
   });
 });

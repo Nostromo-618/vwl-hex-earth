@@ -15,11 +15,13 @@ import {
 } from '../../src/earth/stats';
 
 const world: HexWorldInfo = {
+  region: 'Europe',
   tier: 'low',
   cols: 10,
   rows: 5,
   hexes: 50,
   cell: 1.5,
+  cellUnit: 'deg',
   landCells: 20,
   kindCounts: [1, 2, 3],
   paintMs: 12,

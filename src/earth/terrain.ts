@@ -1,4 +1,6 @@
-import { neighborIndexes } from './world';
+import { neighborIndexes, cellCenterXY, cellStep, cellToLonLat } from './world';
+import { WORLD, type MapRegion } from './regions';
+import { xyToLonLat } from './project';
 
 export const KIND = {
   DEEP: 0,
@@ -67,15 +69,16 @@ function smoothstep(t: number): number {
 }
 
 /**
- * Value noise on an integer lattice, periodic in x so it is seamless across
- * the ±180° dateline. `periodX` is the lattice period in lattice units.
+ * Value noise on an integer lattice. When `periodX` is set, x wraps so the
+ * globe is seamless across the dateline; regional maps pass null.
  */
-function valueNoise(x: number, y: number, periodX: number, salt: number): number {
+function valueNoise(x: number, y: number, periodX: number | null, salt: number): number {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
   const fx = smoothstep(x - x0);
   const fy = smoothstep(y - y0);
-  const wrap = (ix: number): number => ((ix % periodX) + periodX) % periodX;
+  const wrap = (ix: number): number =>
+    periodX == null ? ix : ((ix % periodX) + periodX) % periodX;
   const v00 = hash01(wrap(x0), y0, salt);
   const v10 = hash01(wrap(x0 + 1), y0, salt);
   const v01 = hash01(wrap(x0), y0 + 1, salt);
@@ -85,15 +88,22 @@ function valueNoise(x: number, y: number, periodX: number, salt: number): number
   return a + (b - a) * fy;
 }
 
-/** Fractal (2–3 octave) value noise; x wraps every `cols` cells. */
-function fbm(col: number, row: number, cols: number, salt: number, octaves: number): number {
-  const periodX = Math.max(1, Math.round(cols / LATTICE));
+/** Fractal (2–3 octave) value noise; x wraps every `cols` cells when wrapX. */
+function fbm(
+  col: number,
+  row: number,
+  cols: number,
+  salt: number,
+  octaves: number,
+  wrapX: boolean,
+): number {
+  const periodX = wrapX ? Math.max(1, Math.round(cols / LATTICE)) : null;
   let amp = 0.5;
   let freq = 1;
   let sum = 0;
   let norm = 0;
   for (let o = 0; o < octaves; o++) {
-    const p = Math.max(1, Math.round(periodX * freq));
+    const p = periodX == null ? null : Math.max(1, Math.round(periodX * freq));
     sum += amp * valueNoise((col / LATTICE) * freq, (row / LATTICE) * freq, p, salt + o * 101);
     norm += amp;
     amp *= 0.5;
@@ -151,6 +161,7 @@ export function buildWorld(
   landAt: (lon: number, lat: number) => boolean,
   cols: number,
   rows: number,
+  region: MapRegion = WORLD,
 ): WorldMap {
   const n = cols * rows;
   const land = new Uint8Array(n);
@@ -158,25 +169,23 @@ export function buildWorld(
   const lats = new Float32Array(n);
   const kinds = new Uint8Array(n);
 
-  const lonOf = (col: number): number => -180 + ((col + 0.5) * 360) / cols;
+  const { dx, dy } = cellStep(cols, rows, region);
 
-  // Pass 1: single center sample per cell.
+  // Pass 1: single center sample per cell (visual hex center, including odd-row offset).
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const i = row * cols + col;
-      lats[i] = 90 - ((row + 0.5) * 180) / rows;
-      land[i] = landAt(lonOf(col), lats[i]) ? 1 : 0;
+      const ll = cellToLonLat(col, row, cols, rows, region);
+      lats[i] = ll.lat;
+      land[i] = landAt(ll.lon, ll.lat) ? 1 : 0;
     }
   }
 
   // Pass 2: supersample only boundary cells (any parity-correct neighbor has a
-  // different land class) with a 4x4 grid over the cell footprint.
-  const lonSpan = 360 / cols;
-  const latSpan = 180 / rows;
+  // different land class) with a 4x4 grid over the cell footprint in planar space.
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const i = row * cols + col;
-      const parity = row & 1;
       let boundary = false;
       for (const j of neighborIndexes(col, row, cols, rows)) {
         if (land[j] !== land[i]) {
@@ -188,14 +197,14 @@ export function buildWorld(
         landPct[i] = land[i];
         continue;
       }
-      const centerLon = -180 + ((col + 0.5 + parity * 0.5) * 360) / cols;
-      const centerLat = lats[i];
+      const center = cellCenterXY(col, row, cols, rows, region);
       let hits = 0;
       for (let sy = 0; sy < 4; sy++) {
         for (let sx = 0; sx < 4; sx++) {
-          const lon = centerLon + ((sx + 0.5) / 4 - 0.5) * lonSpan;
-          const lat = centerLat + ((sy + 0.5) / 4 - 0.5) * latSpan;
-          if (landAt(lon, lat)) hits++;
+          const x = center.x + ((sx + 0.5) / 4 - 0.5) * dx;
+          const y = center.y + ((sy + 0.5) / 4 - 0.5) * dy;
+          const ll = xyToLonLat(x, y, region);
+          if (landAt(ll.lon, ll.lat)) hits++;
         }
       }
       landPct[i] = hits / 16;
@@ -214,9 +223,9 @@ export function buildWorld(
         kinds[i] = touchesLand(i, land, cols, rows) ? KIND.SHALLOW : KIND.DEEP;
         continue;
       }
-      const climate = fbm(col, row, cols, 7, 3);
-      const detail = fbm(col, row, cols, 31, 2);
-      const aridity = fbm(col, row, cols, 53, 2);
+      const climate = fbm(col, row, cols, 7, 3, region.wrapX);
+      const detail = fbm(col, row, cols, 31, 2, region.wrapX);
+      const aridity = fbm(col, row, cols, 53, 2, region.wrapX);
       const absLat = Math.abs(lats[i]);
       kinds[i] = landKind(absLat, climate, detail, aridity, touchesWater(i, land, cols, rows));
     }

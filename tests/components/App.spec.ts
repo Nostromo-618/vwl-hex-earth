@@ -1,7 +1,7 @@
 import { defineComponent, h } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { recordPaint, recordSharp, statsStore } from '../../src/earth/stats';
+import { statsStore } from '../../src/earth/stats';
 
 const zoomIn = vi.fn();
 const zoomOut = vi.fn();
@@ -12,7 +12,7 @@ const setTheme = vi.fn();
 vi.mock('../../src/components/HexEarth.vue', () => ({
   default: defineComponent({
     name: 'HexEarth',
-    props: { tier: String, pathMode: Boolean },
+    props: { tier: String, pathMode: Boolean, region: String },
     emits: ['status'],
     setup(_props, { expose }) {
       expose({ zoomIn, zoomOut, resetView, runBenchmarks });
@@ -85,18 +85,14 @@ describe('App', () => {
     expect(setTheme).not.toHaveBeenCalled();
   });
 
-  it('keeps ultra disabled until the gate passes, then allows it', async () => {
+  it('defaults to Europe ultra with the 259.2k tier enabled', async () => {
     const wrapper = mount(App);
+    expect(wrapper.get('[data-testid="region-europe"]').classes()).toContain('active');
     const ultra = wrapper.get('[data-testid="tier-ultra"]');
-    expect((ultra.element as HTMLButtonElement).disabled).toBe(true);
-    await ultra.trigger('click');
+    expect((ultra.element as HTMLButtonElement).disabled).toBe(false);
+    expect(ultra.classes()).toContain('active');
+    await wrapper.get('[data-testid="tier-low"]').trigger('click');
     expect(wrapper.get('[data-testid="tier-low"]').classes()).toContain('active');
-    recordPaint('ultra', 100, 10);
-    recordSharp('ultra', 10);
-    await wrapper.vm.$nextTick();
-    expect((wrapper.get('[data-testid="tier-ultra"]').element as HTMLButtonElement).disabled).toBe(
-      false,
-    );
     await wrapper.get('[data-testid="tier-ultra"]').trigger('click');
     expect(wrapper.get('[data-testid="tier-ultra"]').classes()).toContain('active');
     await wrapper.get('[data-testid="tier-ultra"]').trigger('click');
@@ -115,6 +111,10 @@ describe('App', () => {
     await wrapper.get('[data-testid="path-mode"] button').trigger('click');
     await wrapper.get('[data-testid="tier-mid"]').trigger('click');
     expect(wrapper.get('[data-testid="tier-mid"]').classes()).toContain('active');
+    expect(wrapper.get('[data-testid="region-europe"]').classes()).toContain('active');
+    await wrapper.get('[data-testid="region-world"]').trigger('click');
+    expect(wrapper.get('[data-testid="region-world"]').classes()).toContain('active');
+    await wrapper.get('[data-testid="region-world"]').trigger('click');
   });
 
   it('skips background benchmarks when nobench=1', async () => {
@@ -124,9 +124,11 @@ describe('App', () => {
     expect(runBenchmarks).not.toHaveBeenCalled();
   });
 
-  it('schedules background benchmarks after mount', async () => {
-    mount(App);
+  it('runs comparative benchmarks only on request', async () => {
+    const wrapper = mount(App);
     await vi.advanceTimersByTimeAsync(800);
+    expect(runBenchmarks).not.toHaveBeenCalled();
+    await wrapper.get('[data-testid="run-benchmarks"]').trigger('click');
     await flushPromises();
     expect(runBenchmarks).toHaveBeenCalled();
   });

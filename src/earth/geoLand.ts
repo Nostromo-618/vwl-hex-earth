@@ -1,13 +1,20 @@
-import landUrl from '../assets/land-110m.json?url';
+import landUrl from '../assets/land-110m.json?url&no-inline';
+import europeLandUrl from '../assets/land-10m-europe.json?url&no-inline';
+import europeLakesUrl from '../assets/lakes-10m-europe.json?url&no-inline';
+import { WORLD, type MapRegion } from './regions';
 
 type Ring = number[][];
 
-interface Poly {
+interface LandPolygon {
   rings: Ring[];
   minX: number;
   minY: number;
   maxX: number;
   maxY: number;
+}
+
+export interface LandPolygons {
+  polygons: LandPolygon[];
 }
 
 export interface LandTopology {
@@ -16,12 +23,13 @@ export interface LandTopology {
   objects: {
     land: {
       type: string;
-      geometries: Array<{ type: string; arcs: unknown }>;
+      geometries?: Array<{ type: string; arcs: unknown }>;
+      arcs?: unknown;
     };
   };
 }
 
-let cachedTester: ((lon: number, lat: number) => boolean) | null = null;
+const testers = new Map<string, (lon: number, lat: number) => boolean>();
 
 const LAT_BANDS = 180;
 
@@ -35,10 +43,10 @@ function normalizeLon(lon: number): number {
 /**
  * Latitude-band index: each polygon is registered in every 1° band its bbox
  * spans, so a sample only tests the handful of polygons near its latitude
- * instead of all ~130.
+ * instead of all of them.
  */
-function buildBands(list: Poly[]): Poly[][] {
-  const out: Poly[][] = Array.from({ length: LAT_BANDS }, () => []);
+function buildBands(list: LandPolygon[]): LandPolygon[][] {
+  const out: LandPolygon[][] = Array.from({ length: LAT_BANDS }, () => []);
   for (const poly of list) {
     const b0 = Math.max(0, Math.min(LAT_BANDS - 1, Math.floor(poly.minY) + 90));
     const b1 = Math.max(0, Math.min(LAT_BANDS - 1, Math.ceil(poly.maxY) + 90));
@@ -67,7 +75,7 @@ function centerLon(ring: Ring): number {
   return sum / ring.length;
 }
 
-function decode(topo: LandTopology): Poly[] {
+function decode(topo: LandTopology): LandPolygon[] {
   const { scale, translate } = topo.transform;
   const arcs: number[][][] = topo.arcs.map((arc) => {
     const pts: number[][] = [];
@@ -91,7 +99,7 @@ function decode(topo: LandTopology): Poly[] {
     return unwrapRing(pts);
   };
 
-  const out: Poly[] = [];
+  const out: LandPolygon[] = [];
   const addPolygon = (arcLists: number[][]) => {
     const outer = ringFromArcIndexes(arcLists[0]);
     const outerCenter = centerLon(outer);
@@ -116,7 +124,9 @@ function decode(topo: LandTopology): Poly[] {
     out.push({ rings: allRings, minX, minY, maxX, maxY });
   };
 
-  for (const g of topo.objects.land.geometries) {
+  const land = topo.objects.land;
+  const geometries = land.geometries ?? (land.type ? [land] : []);
+  for (const g of geometries) {
     if (g.type === 'Polygon') addPolygon(g.arcs as number[][]);
     else if (g.type === 'MultiPolygon') for (const poly of g.arcs as number[][][]) addPolygon(poly);
   }
@@ -138,7 +148,7 @@ function inRing(lon: number, lat: number, ring: Ring): boolean {
   return inside;
 }
 
-function testerFor(index: Poly[][]): (lon: number, lat: number) => boolean {
+function testerFor(index: LandPolygon[][]): (lon: number, lat: number) => boolean {
   return (lon, lat) => {
     if (lat < -90 || lat > 90) return false;
     const l = normalizeLon(lon);
@@ -165,10 +175,36 @@ export function landTestFromTopology(topo: LandTopology): (lon: number, lat: num
   return testerFor(buildBands(decode(topo)));
 }
 
-export async function createGeoLandTest(): Promise<(lon: number, lat: number) => boolean> {
-  if (!cachedTester) {
-    const topo: LandTopology = await (await fetch(landUrl)).json();
-    cachedTester = landTestFromTopology(topo);
+/** Build a mask from pre-clipped polygon JSON (Europe 10m land / lakes). */
+export function landTestFromPolygons(data: LandPolygons): (lon: number, lat: number) => boolean {
+  return testerFor(buildBands(data.polygons));
+}
+
+async function loadJson<T>(url: string): Promise<T> {
+  return (await (await fetch(url)).json()) as T;
+}
+
+export async function createGeoLandTest(
+  region: Pick<MapRegion, 'id'> = WORLD,
+): Promise<(lon: number, lat: number) => boolean> {
+  const id = region.id;
+  const hit = testers.get(id);
+  if (hit) return hit;
+
+  if (id === 'europe') {
+    const [land, lakes] = await Promise.all([
+      loadJson<LandPolygons>(europeLandUrl),
+      loadJson<LandPolygons>(europeLakesUrl),
+    ]);
+    const landAt = landTestFromPolygons(land);
+    const lakeAt = landTestFromPolygons(lakes);
+    const tester = (lon: number, lat: number): boolean => landAt(lon, lat) && !lakeAt(lon, lat);
+    testers.set(id, tester);
+    return tester;
   }
-  return cachedTester;
+
+  const topo = await loadJson<LandTopology>(landUrl);
+  const tester = landTestFromTopology(topo);
+  testers.set(id, tester);
+  return tester;
 }

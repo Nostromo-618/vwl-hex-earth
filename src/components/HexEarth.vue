@@ -7,11 +7,13 @@ import {
   cellToLonLat,
   cellToQ,
   findPath,
+  gridFor,
   qToCol,
   tierById,
   type Cell,
   type GridTier,
 } from '../earth/world';
+import { regionById, type MapRegion } from '../earth/regions';
 import { createGeoLandTest } from '../earth/geoLand';
 import { KIND_NAMES, buildWorld, fillFor, type WorldMap } from '../earth/terrain';
 import {
@@ -26,6 +28,7 @@ import {
 
 const props = defineProps<{
   tier: GridTier['id'];
+  region: MapRegion['id'];
   pathMode: boolean;
 }>();
 
@@ -55,6 +58,9 @@ let startCell: Cell | null = null;
 let lastPaintMs = 0;
 let paintToken = 0;
 let benchmarking = false;
+let disposed = false;
+let benchmarkEpoch = 0;
+let initialFrame = 0;
 let sampler: StatsSampler | null = null;
 
 const resizeObserver = new ResizeObserver(() => redraw());
@@ -80,25 +86,31 @@ function rememberKindCounts(counts: number[]): void {
   worldCounts = counts;
 }
 
-async function paint(tierId: GridTier['id'] = props.tier, quiet = false): Promise<void> {
+async function paint(
+  tierId: GridTier['id'] = props.tier,
+  regionId: MapRegion['id'] = props.region,
+  quiet = false,
+): Promise<void> {
   if (!grid) return;
   const token = ++paintToken;
   const tier = tierById(tierId);
-  if (!quiet) emit('status', `painting ${tier.cols}×${tier.rows}…`);
+  const region = regionById(regionId);
+  const spec = gridFor(region, tier);
+  if (!quiet) emit('status', `painting ${region.label} ${spec.cols}×${spec.rows}…`);
   const started = performance.now();
-  const landAt = await createGeoLandTest();
+  const landAt = await createGeoLandTest(region);
   if (token !== paintToken || !grid) {
     return;
   }
 
-  world = buildWorld(landAt, tier.cols, tier.rows);
-  if (grid.width !== tier.cols || grid.height !== tier.rows) {
-    grid.setDimensions(tier.cols, tier.rows);
+  world = buildWorld(landAt, spec.cols, spec.rows, region);
+  if (grid.width !== spec.cols || grid.height !== spec.rows) {
+    grid.setDimensions(spec.cols, spec.rows);
   }
   for (const hex of grid.hexes.values()) {
     const col = qToCol(hex.q, hex.r);
-    const idx = hex.r * tier.cols + col;
-    const { fill, stroke } = fillFor(world.kinds, idx, tier.cols);
+    const idx = hex.r * spec.cols + col;
+    const { fill, stroke } = fillFor(world.kinds, idx, spec.cols);
     hex.fill = fill;
     hex.stroke = stroke;
   }
@@ -106,10 +118,9 @@ async function paint(tierId: GridTier['id'] = props.tier, quiet = false): Promis
   fitView();
   lastPaintMs = performance.now() - started;
   if (!quiet) {
-    const hexes = (tier.cols * tier.rows).toLocaleString();
     emit(
       'status',
-      `painted ${tier.cols}×${tier.rows} · ${hexes} hexes in ${Math.round(lastPaintMs)} ms`,
+      `painted ${region.label} ${spec.cols}×${spec.rows} · ${spec.hexes.toLocaleString()} hexes in ${Math.round(lastPaintMs)} ms`,
     );
   }
 }
@@ -197,7 +208,7 @@ function drawOverlay(ctx: CanvasRenderingContext2D, hex: HexCell, size: number):
 function onSelect(hex: HexCell): void {
   if (!grid) return;
   const cell: Cell = { col: qToCol(hex.q, hex.r), row: hex.r };
-  const ll = cellToLonLat(cell.col, cell.row, grid.width, grid.height);
+  const ll = cellToLonLat(cell.col, cell.row, grid.width, grid.height, regionById(props.region));
   if (!props.pathMode) {
     startCell = null;
     clearPathVisuals();
@@ -233,12 +244,15 @@ function onSelect(hex: HexCell): void {
 function getWorldInfo(): HexWorldInfo | null {
   if (!world || !worldCounts) return null;
   const tier = tierById(props.tier);
+  const spec = gridFor(regionById(props.region), tier);
   return {
+    region: regionById(props.region).label,
     tier: tier.id,
     cols: world.cols,
     rows: world.rows,
     hexes: world.cols * world.rows,
-    cell: tier.cell,
+    cell: spec.cell,
+    cellUnit: spec.cellUnit,
     landCells: world.landCells,
     kindCounts: worldCounts,
     paintMs: lastPaintMs,
@@ -258,8 +272,11 @@ function getCanvasSize(): { width: number; height: number } {
  * Measures first paint (world build + fill + fit render) and the average of a
  * few sharp re-renders, then records the results for the stats panel.
  */
-async function measureTier(tier: GridTier): Promise<void> {
-  const landAt = await createGeoLandTest();
+async function measureTier(tier: GridTier, epoch: number): Promise<void> {
+  const region = regionById(props.region);
+  const spec = gridFor(region, tier);
+  const landAt = await createGeoLandTest(region);
+  if (disposed || epoch !== benchmarkEpoch) return;
   const holder = document.createElement('div');
   holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:960px;height:600px;';
   const canvas = document.createElement('canvas');
@@ -271,46 +288,50 @@ async function measureTier(tier: GridTier): Promise<void> {
     element: holder,
     canvas,
     size: HEX_SIZE,
-    width: tier.cols,
-    height: tier.rows,
+    width: spec.cols,
+    height: spec.rows,
     rotation: -Math.PI / 6,
     pixelRatio: 'auto',
     cull: true,
     ...ZOOM_OPTIONS,
   });
 
-  const started = performance.now();
-  const probeWorld = buildWorld(landAt, tier.cols, tier.rows);
-  for (const hex of probe.hexes.values()) {
-    const col = qToCol(hex.q, hex.r);
-    const idx = hex.r * tier.cols + col;
-    const { fill, stroke } = fillFor(probeWorld.kinds, idx, tier.cols);
-    hex.fill = fill;
-    hex.stroke = stroke;
-  }
-  fitViewFor(probe, holder);
-  const firstPaintMs = performance.now() - started;
+  try {
+    const started = performance.now();
+    const probeWorld = buildWorld(landAt, spec.cols, spec.rows, region);
+    for (const hex of probe.hexes.values()) {
+      const col = qToCol(hex.q, hex.r);
+      const idx = hex.r * spec.cols + col;
+      const { fill, stroke } = fillFor(probeWorld.kinds, idx, spec.cols);
+      hex.fill = fill;
+      hex.stroke = stroke;
+    }
+    fitViewFor(probe, holder);
+    const firstPaintMs = performance.now() - started;
 
-  recordPaint(tier.id, firstPaintMs, readHeapMB()?.usedMB ?? null);
-  for (let i = 0; i < 5; i++) {
-    const t0 = performance.now();
-    renderNow(probe);
-    recordSharp(tier.id, performance.now() - t0);
+    recordPaint(tier.id, firstPaintMs, readHeapMB()?.usedMB ?? null);
+    for (let i = 0; i < 5; i++) {
+      const t0 = performance.now();
+      renderNow(probe);
+      recordSharp(tier.id, performance.now() - t0);
+    }
+  } finally {
+    probe.destroy();
+    holder.remove();
   }
-
-  probe.destroy();
-  holder.remove();
 }
 
 /** Background first-paint/render benchmarks for every tier (incl. ultra gate). */
 async function runBenchmarks(): Promise<void> {
-  if (benchmarking) return;
+  if (benchmarking || disposed) return;
+  const epoch = ++benchmarkEpoch;
   benchmarking = true;
   statsStore.benchmarkRunning = true;
   try {
     for (const tier of TIERS) {
       await new Promise((resolve) => setTimeout(resolve, 0));
-      await measureTier(tier);
+      if (disposed || epoch !== benchmarkEpoch) break;
+      await measureTier(tier, epoch);
     }
   } finally {
     benchmarking = false;
@@ -323,7 +344,18 @@ watch(
   (tier) => {
     clearPathVisuals();
     startCell = null;
-    void paint(tier);
+    void paint(tier, props.region);
+  },
+);
+
+watch(
+  () => props.region,
+  (region) => {
+    benchmarkEpoch++;
+    statsStore.benchmarks = {};
+    clearPathVisuals();
+    startCell = null;
+    void paint(props.tier, region);
   },
 );
 
@@ -341,12 +373,12 @@ watch(
 
 onMounted(() => {
   if (!host.value) return;
-  const tier = tierById(props.tier);
+  const spec = gridFor(regionById(props.region), tierById(props.tier));
   grid = new VdHexGridCore({
     element: host.value,
     size: HEX_SIZE,
-    width: tier.cols,
-    height: tier.rows,
+    width: spec.cols,
+    height: spec.rows,
     rotation: -Math.PI / 6,
     pixelRatio: 'auto',
     cull: true,
@@ -364,12 +396,15 @@ onMounted(() => {
   });
   sampler.start();
 
-  requestAnimationFrame(() => {
-    void paint(props.tier);
+  initialFrame = requestAnimationFrame(() => {
+    if (!disposed) void paint(props.tier);
   });
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
+  benchmarkEpoch++;
+  cancelAnimationFrame(initialFrame);
   paintToken++;
   resizeObserver.disconnect();
   sampler?.stop();
@@ -393,6 +428,15 @@ defineExpose({
 </template>
 
 <style scoped>
+.hex-host :deep(canvas) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.hex-host :deep(canvas:active) {
+  cursor: grabbing;
+}
 .hex-host {
   position: relative;
   flex: 1;

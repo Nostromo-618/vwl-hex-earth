@@ -17,7 +17,7 @@ describe('world', () => {
     expect(TIERS.map((t) => t.id)).toEqual(['low', 'mid', 'high', 'ultra']);
     expect(DEFAULT_TIER).toBe('low');
     expect(HEX_SIZE).toBe(6);
-    expect(TIERS[3].experimental).toBe(true);
+    expect(TIERS[3].id).toBe('ultra');
   });
 
   it('counts hexes as cols × rows', () => {

@@ -19,7 +19,7 @@ A hex-grid rendering of the whole Earth built with Vue 3, [`@vanduo-oss/vd3`](ht
 - Stats panel: FPS, render mode/timing, hex counts, terrain breakdown, memory,
   view, and per-tier benchmark results
 
-[Open the live Hex Earth demo](https://labs.vanduo.dev/#demos/hex-earth) · [Vanduo Labs](https://labs.vanduo.dev/)
+[Open the live Hex Earth demo](https://labs.vanduo.dev/#demos/hex-earth) · [Vanduo Web Labs](https://labs.vanduo.dev/)
 
 ## Requirements
 

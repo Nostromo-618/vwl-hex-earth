@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@vanduo-oss/vd3": "1.7.4",
-    "@vanduo-oss/vwl-cbun": "link:../vwl-cbun",
+    "@vanduo-oss/vwl-cbun": "github:vanduo-oss/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11",
     "vue": "3.5.42"
   },
   "devDependencies": {

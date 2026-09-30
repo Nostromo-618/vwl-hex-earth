@@ -22,7 +22,7 @@ const land = vi.hoisted(() => {
   };
 });
 
-vi.mock('@vanduo-oss/vdl-cbun/hex-grid', async () => import('../helpers/mock-hex-grid'));
+vi.mock('@vanduo-oss/vwl-cbun/hex-grid', async () => import('../helpers/mock-hex-grid'));
 
 vi.mock('../../src/earth/geoLand', () => ({
   createGeoLandTest: () => land.create(),

@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import type { HexRenderStats } from '@vanduo-oss/vdl-cbun/hex-grid';
+import type { HexRenderStats } from '@vanduo-oss/vwl-cbun/hex-grid';
 import { KIND_NAMES } from './terrain';
 
 /** World-side counters the canvas core does not know about. */

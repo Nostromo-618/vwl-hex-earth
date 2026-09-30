@@ -8,4 +8,4 @@ minimumReleaseAgeExclude:
 
 allowBuilds:
   esbuild: true
-  '@vanduo-oss/vdl-cbun@https://codeload.github.com/vanduo-oss/vdl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5': true
+  '@vanduo-oss/vwl-cbun@https://codeload.github.com/vanduo-oss/vwl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5': true

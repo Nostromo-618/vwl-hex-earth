@@ -14,7 +14,7 @@ const props = withDefaults(
 const emit = defineEmits<{ close: [] }>();
 const panel = ref<HTMLElement | null>(null);
 const collapsed = ref(false);
-const key = `vdl-hex-earth:${props.name}:position`;
+const key = `vwl-hex-earth:${props.name}:position`;
 function initial() {
   return { x: props.initialX, y: props.initialY };
 }
@@ -132,14 +132,14 @@ onBeforeUnmount(() => {
   <aside
     v-if="open"
     ref="panel"
-    class="vdl-earth-panel"
+    class="vwl-earth-panel"
     :class="`${name}-panel`"
     :data-testid="`${name}-panel`"
     :aria-label="title"
     :style="{ left: `${pos.x}px`, top: `${pos.y}px` }"
   >
     <header
-      class="vdl-earth-panel-head"
+      class="vwl-earth-panel-head"
       :data-testid="`${name}-head`"
       tabindex="0"
       :aria-label="`Move ${title}. Use arrow keys; Shift for larger steps.`"
@@ -164,11 +164,11 @@ onBeforeUnmount(() => {
         ×
       </button>
     </header>
-    <div v-show="!collapsed" class="vdl-earth-panel-body"><slot /></div>
+    <div v-show="!collapsed" class="vwl-earth-panel-body"><slot /></div>
   </aside>
 </template>
 <style scoped>
-.vdl-earth-panel {
+.vwl-earth-panel {
   position: absolute;
   z-index: 5;
   width: 310px;
@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 28px #0003;
   font-size: 12px;
 }
-.vdl-earth-panel-head {
+.vwl-earth-panel-head {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -194,11 +194,11 @@ onBeforeUnmount(() => {
   background: var(--vd-bg-secondary);
   flex-shrink: 0;
 }
-.vdl-earth-panel-head strong {
+.vwl-earth-panel-head strong {
   margin-right: auto;
   letter-spacing: 0.08em;
 }
-.vdl-earth-panel-head button {
+.vwl-earth-panel-head button {
   background: transparent;
   color: var(--vd-text-primary);
   border: 1px solid var(--vd-border-color);
@@ -208,16 +208,16 @@ onBeforeUnmount(() => {
   cursor: pointer;
   font-size: 18px;
 }
-.vdl-earth-panel-head:focus-visible {
+.vwl-earth-panel-head:focus-visible {
   outline: 2px solid var(--vd-color-primary);
   outline-offset: -2px;
 }
-.vdl-earth-panel-body {
+.vwl-earth-panel-body {
   overflow: auto;
   overscroll-behavior: contain;
 }
 @media (max-width: 640px) {
-  .vdl-earth-panel {
+  .vwl-earth-panel {
     left: 8px !important;
     right: 8px;
     top: auto !important;
@@ -225,11 +225,11 @@ onBeforeUnmount(() => {
     width: auto;
     max-height: 52%;
   }
-  .vdl-earth-panel-head {
+  .vwl-earth-panel-head {
     cursor: default;
     touch-action: auto;
   }
-  .vdl-earth-panel-head button {
+  .vwl-earth-panel-head button {
     min-height: 44px;
     min-width: 44px;
   }

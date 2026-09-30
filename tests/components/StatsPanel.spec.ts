@@ -105,7 +105,7 @@ describe('StatsPanel', () => {
     window.dispatchEvent(new PointerEvent('pointermove', { clientX: 80, clientY: 160 }));
     window.dispatchEvent(new PointerEvent('pointerup'));
     await flushPromises();
-    const stored = JSON.parse(localStorage.getItem('vdl-hex-earth:stats:position') ?? '{}') as {
+    const stored = JSON.parse(localStorage.getItem('vwl-hex-earth:stats:position') ?? '{}') as {
       x: number;
       y: number;
     };
@@ -119,13 +119,13 @@ describe('StatsPanel', () => {
   });
 
   it('loads a saved position and ignores malformed storage', () => {
-    localStorage.setItem('vdl-hex-earth:stats:position', '{not json');
+    localStorage.setItem('vwl-hex-earth:stats:position', '{not json');
     const broken = mount(StatsPanel, { props: { open: true } });
     expect((broken.get('[data-testid="stats-panel"]').element as HTMLElement).style.left).toBe(
       '350px',
     );
     broken.unmount();
-    localStorage.setItem('vdl-hex-earth:stats:position', JSON.stringify({ x: 40, y: 50 }));
+    localStorage.setItem('vwl-hex-earth:stats:position', JSON.stringify({ x: 40, y: 50 }));
     const ok = mount(StatsPanel, { props: { open: true } });
     expect((ok.get('[data-testid="stats-panel"]').element as HTMLElement).style.left).toBe('40px');
     ok.unmount();

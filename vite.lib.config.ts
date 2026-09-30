@@ -11,8 +11,8 @@ export default defineConfig({
       external: [
         'vue',
         '@vanduo-oss/vd3',
-        '@vanduo-oss/vdl-cbun/hex-grid',
-        '@vanduo-oss/vdl-cbun/hex-grid/hex-math',
+        '@vanduo-oss/vwl-cbun/hex-grid',
+        '@vanduo-oss/vwl-cbun/hex-grid/hex-math',
       ],
     },
   },

@@ -58,8 +58,8 @@ function setTier(next: GridTier['id']): void {
 </script>
 
 <template>
-  <div class="vdl-earth-demo" :class="{ 'vdl-earth-embedded': props.embedded }">
-    <header class="vdl-earth-launchers">
+  <div class="vwl-earth-demo" :class="{ 'vwl-earth-embedded': props.embedded }">
+    <header class="vwl-earth-launchers">
       <span class="brand">HEX EARTH</span>
       <button
         class="vd-btn vd-btn-ghost vd-btn-sm"
@@ -178,7 +178,7 @@ function setTier(next: GridTier['id']): void {
 </template>
 
 <style scoped>
-.vdl-earth-demo {
+.vwl-earth-demo {
   position: relative;
   overflow: hidden;
   min-height: 320px;
@@ -187,10 +187,10 @@ function setTier(next: GridTier['id']): void {
   height: 100dvh;
 }
 
-.vdl-earth-embedded {
+.vwl-earth-embedded {
   height: 100%;
 }
-.vdl-earth-launchers {
+.vwl-earth-launchers {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -198,7 +198,7 @@ function setTier(next: GridTier['id']): void {
   padding: 6px 12px;
   background: var(--vd-bg-secondary);
 }
-.vdl-earth-launchers button {
+.vwl-earth-launchers button {
   min-height: 44px;
 }
 .toolbar {

@@ -6,7 +6,7 @@
 2. `pnpm install`
 3. `pnpm exec playwright install chromium` if you will run e2e tests.
 
-If `@vanduo-oss/vdl-cbun` installs without a `dist/` folder, the GitHub package
+If `@vanduo-oss/vwl-cbun` installs without a `dist/` folder, the GitHub package
 did not run `prepack`. Reinstall with scripts enabled once:
 
 ```sh

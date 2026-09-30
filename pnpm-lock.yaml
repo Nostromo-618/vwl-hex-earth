@@ -11,9 +11,9 @@ importers:
       '@vanduo-oss/vd3':
         specifier: 1.7.4
         version: 1.7.4(vue@3.5.42(typescript@6.0.3))
-      '@vanduo-oss/vdl-cbun':
-        specifier: github:vanduo-oss/vdl-cbun#ec67960defcaba2869333e22690254e85f70fdc5
-        version: https://codeload.github.com/vanduo-oss/vdl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5(vue@3.5.42(typescript@6.0.3))
+      '@vanduo-oss/vwl-cbun':
+        specifier: link:../vwl-cbun
+        version: link:../vwl-cbun
       vue:
         specifier: 3.5.42
         version: 3.5.42(typescript@6.0.3)
@@ -826,13 +826,6 @@ packages:
 
   '@vanduo-oss/vd3@1.7.4':
     resolution: {integrity: sha512-Vg0Sx/CcXqyo6EdOZIG0luAGkLOwxZhCAK+SfL+D/cEK5i7EXrHczwHB0jj5GJWBSOZqgzhbIWYktwbpr984NQ==}
-    engines: {node: '>=20.19.0', pnpm: '>=10'}
-    peerDependencies:
-      vue: '>=3.3.0'
-
-  '@vanduo-oss/vdl-cbun@https://codeload.github.com/vanduo-oss/vdl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5':
-    resolution: {integrity: sha512-JkVrUT8dl8myZmvdPgsCNa2x1RwJdpeXN+FiHnrM5PArwy2qx27+FlIwcHMauxqfeIeV1cpTQLH+QkS9qciIlw==, tarball: https://codeload.github.com/vanduo-oss/vdl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5}
-    version: 1.0.0
     engines: {node: '>=20.19.0', pnpm: '>=10'}
     peerDependencies:
       vue: '>=3.3.0'
@@ -2286,10 +2279,6 @@ snapshots:
       eslint-visitor-keys: 5.0.1
 
   '@vanduo-oss/vd3@1.7.4(vue@3.5.42(typescript@6.0.3))':
-    dependencies:
-      vue: 3.5.42(typescript@6.0.3)
-
-  '@vanduo-oss/vdl-cbun@https://codeload.github.com/vanduo-oss/vdl-cbun/tar.gz/ec67960defcaba2869333e22690254e85f70fdc5(vue@3.5.42(typescript@6.0.3))':
     dependencies:
       vue: 3.5.42(typescript@6.0.3)
 

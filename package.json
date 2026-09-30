@@ -1,18 +1,18 @@
 {
-  "name": "@vanduo-oss/vdl-hex-earth",
+  "name": "@vanduo-oss/vwl-hex-earth",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "A hex-grid rendering of the whole Earth, built with Vue 3, @vanduo-oss/vd3, and @vanduo-oss/vdl-cbun.",
+  "description": "A hex-grid rendering of the whole Earth, built with Vue 3, @vanduo-oss/vd3, and @vanduo-oss/vwl-cbun.",
   "license": "MIT",
   "author": "Nostromo-618",
-  "homepage": "https://github.com/vanduo-oss/vdl-hex-earth#readme",
+  "homepage": "https://github.com/vanduo-oss/vwl-hex-earth#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vanduo-oss/vdl-hex-earth.git"
+    "url": "git+https://github.com/vanduo-oss/vwl-hex-earth.git"
   },
   "bugs": {
-    "url": "https://github.com/vanduo-oss/vdl-hex-earth/issues"
+    "url": "https://github.com/vanduo-oss/vwl-hex-earth/issues"
   },
   "keywords": [
     "hex",
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@vanduo-oss/vd3": "1.7.4",
-    "@vanduo-oss/vdl-cbun": "github:vanduo-oss/vdl-cbun#ec67960defcaba2869333e22690254e85f70fdc5",
+    "@vanduo-oss/vwl-cbun": "link:../vwl-cbun",
     "vue": "3.5.42"
   },
   "devDependencies": {
@@ -69,7 +69,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
-      "@vanduo-oss/vdl-cbun"
+      "@vanduo-oss/vwl-cbun"
     ]
   },
   "exports": {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { VdHexGridCore, type HexCell, type HexRenderStats } from '@vanduo-oss/vdl-cbun/hex-grid';
+import { VdHexGridCore, type HexCell, type HexRenderStats } from '@vanduo-oss/vwl-cbun/hex-grid';
 import {
   HEX_SIZE,
   TIERS,

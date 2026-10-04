@@ -43,28 +43,28 @@
     "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm knip && pnpm test:coverage && pnpm build && pnpm test:e2e"
   },
   "dependencies": {
-    "@vanduo-oss/vd3": "1.7.4",
+    "@vanduo-oss/vd3": "1.7.5",
     "@vanduo-oss/vwl-cbun": "github:vanduo-oss/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11",
-    "vue": "3.5.42"
+    "vue": "3.5.43"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
-    "@types/node": "26.6.0",
+    "@types/node": "26.6.4",
     "@vitejs/plugin-vue": "6.0.9",
-    "@vitest/coverage-v8": "5.0.1",
-    "@vue/test-utils": "2.5.0",
-    "eslint": "10.10.0",
-    "eslint-plugin-vue": "10.11.0",
-    "jsdom": "30.0.1",
-    "knip": "6.35.1",
-    "prettier": "3.9.6",
+    "@vitest/coverage-v8": "5.0.3",
+    "@vue/test-utils": "2.5.1",
+    "eslint": "10.12.0",
+    "eslint-plugin-vue": "10.11.1",
+    "jsdom": "30.1.1",
+    "knip": "6.39.0",
+    "prettier": "3.9.9",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.70.0",
-    "vite": "8.3.0",
-    "vitest": "5.0.1",
+    "typescript-eslint": "8.71.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3",
     "vue-eslint-parser": "10.4.1",
-    "vue-tsc": "3.3.11"
+    "vue-tsc": "3.3.12"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

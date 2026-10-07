@@ -6,13 +6,13 @@
   "description": "A hex-grid rendering of the whole Earth, built with Vue 3, @vanduo-oss/vd3, and @vanduo-oss/vwl-cbun.",
   "license": "MIT",
   "author": "Nostromo-618",
-  "homepage": "https://github.com/vanduo-oss/vwl-hex-earth#readme",
+  "homepage": "https://github.com/nostromo-618/vwl-hex-earth#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vanduo-oss/vwl-hex-earth.git"
+    "url": "git+https://github.com/nostromo-618/vwl-hex-earth.git"
   },
   "bugs": {
-    "url": "https://github.com/vanduo-oss/vwl-hex-earth/issues"
+    "url": "https://github.com/nostromo-618/vwl-hex-earth/issues"
   },
   "keywords": [
     "hex",
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@vanduo-oss/vd3": "1.7.5",
-    "@vanduo-oss/vwl-cbun": "github:vanduo-oss/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11",
+    "@vanduo-oss/vwl-cbun": "github:nostromo-618/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11",
     "vue": "3.5.43"
   },
   "devDependencies": {

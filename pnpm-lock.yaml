@@ -12,8 +12,8 @@ importers:
         specifier: 1.7.5
         version: 1.7.5(vue@3.5.43(typescript@6.0.3))
       '@vanduo-oss/vwl-cbun':
-        specifier: github:vanduo-oss/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11
-        version: https://codeload.github.com/vanduo-oss/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11(vue@3.5.43(typescript@6.0.3))
+        specifier: github:nostromo-618/vwl-cbun#d3a796e25673aff8baeebf9b294d85dc4d979c11
+        version: https://codeload.github.com/nostromo-618/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11(vue@3.5.43(typescript@6.0.3))
       vue:
         specifier: 3.5.43
         version: 3.5.43(typescript@6.0.3)
@@ -830,8 +830,8 @@ packages:
     peerDependencies:
       vue: '>=3.3.0'
 
-  '@vanduo-oss/vwl-cbun@https://codeload.github.com/vanduo-oss/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11':
-    resolution: {tarball: https://codeload.github.com/vanduo-oss/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11}
+  '@vanduo-oss/vwl-cbun@https://codeload.github.com/nostromo-618/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11':
+    resolution: {tarball: https://codeload.github.com/nostromo-618/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11}
     version: 1.0.0
     engines: {node: '>=20.19.0', pnpm: '>=10'}
     peerDependencies:
@@ -2280,7 +2280,7 @@ snapshots:
     dependencies:
       vue: 3.5.43(typescript@6.0.3)
 
-  '@vanduo-oss/vwl-cbun@https://codeload.github.com/vanduo-oss/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11(vue@3.5.43(typescript@6.0.3))':
+  '@vanduo-oss/vwl-cbun@https://codeload.github.com/nostromo-618/vwl-cbun/tar.gz/d3a796e25673aff8baeebf9b294d85dc4d979c11(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       vue: 3.5.43(typescript@6.0.3)
 
